@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">WordSearchApp</string>
+    <string name="words_found_txt">Words: </string>
+    <string-array name="grid_options">
+        <item>10x10</item>
+        <item>12x12</item>
+    </string-array>
+</resources>
