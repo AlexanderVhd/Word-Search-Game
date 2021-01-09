@@ -13,13 +13,11 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import com.jgabrielfreitas.core.BlurImageView;
 
 public class MenuActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
     Button startBtn;
     Spinner spinner;
-    BlurImageView blurImageView;
 
     int gridSize = 10;
 
@@ -30,9 +28,6 @@ public class MenuActivity extends AppCompatActivity implements AdapterView.OnIte
 
         //setup UI elements
         setupWidgets();
-
-        //set blur effect on background
-        blurImageView.setBlur(2);
 
         startBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -56,7 +51,6 @@ public class MenuActivity extends AppCompatActivity implements AdapterView.OnIte
     public void setupWidgets(){
         startBtn = findViewById(R.id.start_btn);
         spinner =  findViewById(R.id.grid_size_option);
-        blurImageView = findViewById(R.id.menu_background);
     }
 
     @Override
@@ -68,9 +62,12 @@ public class MenuActivity extends AppCompatActivity implements AdapterView.OnIte
 
         //set grid size based on dropdown menu item selected
         if(option.equals(optionsList[0])){
-            gridSize = 10;
+            gridSize = 8;
         }
         else if(option.equals(optionsList[1])){
+            gridSize = 10;
+        }
+        else if(option.equals(optionsList[2])){
             gridSize = 12;
         }
     }

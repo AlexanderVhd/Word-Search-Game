@@ -44,10 +44,16 @@ class GridAdapter extends BaseAdapter {
         if(view == null){
             final LayoutInflater layoutInflater = LayoutInflater.from(context);
             view = layoutInflater.inflate(R.layout.grid_item, null);
+
+            view.setTag(false);
         }
 
         TextView textView =  view.findViewById(R.id.text_letter);
         textView.setText(String.valueOf(letter));
+
+        if(mGrid.getNumCol() == 8){
+            textView.setTextSize(21);
+        }
 
         return view;
     }
