@@ -1,6 +1,7 @@
 package com.example.wordsearchapp;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,7 +46,10 @@ class GridAdapter extends BaseAdapter {
             final LayoutInflater layoutInflater = LayoutInflater.from(context);
             view = layoutInflater.inflate(R.layout.grid_item, null);
 
-            view.setTag(false);
+            //set tags for selection as well as colors to be displayed when cell is unselected
+            view.setTag(R.string.active, false);
+            view.setTag(R.string.background_color, "#00FFFFFF");
+            view.setTag(R.string.text_color, "#757575");
         }
 
         TextView textView =  view.findViewById(R.id.text_letter);

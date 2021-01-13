@@ -43,6 +43,8 @@ class WordAdapter extends BaseAdapter {
         if(view == null){
             final LayoutInflater layoutInflater = LayoutInflater.from(context);
             view = layoutInflater.inflate(R.layout.word_item, null);
+
+            view.setTag(word);
         }
 
         TextView textView =  view.findViewById(R.id.text_word);

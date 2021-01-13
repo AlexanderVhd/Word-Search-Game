@@ -2,11 +2,16 @@ package com.example.wordsearchapp;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -28,6 +33,8 @@ import java.io.Console;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,6 +43,12 @@ public class MainActivity extends AppCompatActivity {
     GridView gridView;
     GridView wordsListView;
 
+    //declare constants
+    final int UNSELECTED = -1;
+
+    //declare necessary variables for word selection color, grid cell selection
+    String currentColor = null, currentTextColor = null;
+    int firstSelection = UNSELECTED, secondSelection = UNSELECTED;
     int numCol;
     int wordsFound = 0;
 
@@ -44,26 +57,26 @@ public class MainActivity extends AppCompatActivity {
     Direction[] directions = Direction.values();
     Random random = new Random();
 
-    //declare variables for grid cell selection
-    int firstSelection = -1, secondSelection = -1;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //setup UI widgets and UI toolbar
+        //setup UI widgets and UI toolbar and get gridsize from menu activity
         setupWidgets();
-
-        //get gridsize from menu activity
         numCol = getIntent().getIntExtra("gridSize", 10);
 
-        //setup gamewords and grid objects with user input
+        //setup gamewords and grid objects
         final GameWord gameWords[] = new GameWord[usedWords.length];
         Grid currGrid = new Grid(numCol);
 
+        //setup color array, rearrange color array for game words, and update the colors
+        final String[] colors = this.getResources().getStringArray(R.array.word_colors);
+        shuffleArray(colors);
+        updateColors(colors);
+
         //initialize gameword objects with the used words
-        for(int i = 0; i< usedWords.length; i++){
+        for(int i = 0; i < usedWords.length; i++){
             gameWords[i] = new GameWord(usedWords[i].length(), usedWords[i]);
         }
 
@@ -78,96 +91,97 @@ public class MainActivity extends AppCompatActivity {
         WordAdapter wordAdapter = new WordAdapter(this, gameWords);
         wordsListView.setAdapter(wordAdapter);
 
-        numWords.setText(wordsFound + "/" + usedWords.length);
-
-        for(GameWord word : gameWords){
-            Log.d("Words", word.toString() + " " + Integer.toString(word.getStartCell()) + Integer.toString(word.getEndCell()));
-        }
+        //set UI elements
+        numWords.setText("0/" + usedWords.length);
 
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                if(view.getTag().equals(true)){
-                    /*if(secondSelection == position){
-                        secondSelection = -1;
-                        highlightCell(view, false);
-                    }
-                    else if(firstSelection == position){
-                        firstSelection = -1;
-                        highlightCell(view, false);
-                    }*/
+                if(view.getTag(R.string.active).equals(true)){
                     if(firstSelection == position){
 
                         //remove highlight on gridcell to indicate it is no longer selected
-                        firstSelection = -1;
-                        highlightCell(view, false);
+                        firstSelection = UNSELECTED;
+                        selectCell(view, false);
                     }
                 }
                 else{
-                    /*if(firstSelection == -1){
-                        firstSelection = position;
-                        highlightCell(view, true);
-                    }
-                    else if(secondSelection == -1){
-                        secondSelection = position;
-                        highlightCell(view, true);
-
-                        for(GameWord word : gameWords){
-                            if((firstSelection == word.getStartCell() && secondSelection == word.getEndCell()) || (firstSelection == word.getEndCell() && secondSelection == word.getStartCell())){
-                                Log.d("Test", "Word Found: " + word.toString());
-                                break;
-                            }
-                        }
-                    }
-                    else{
-                        ViewGroup prevSelection;
-
-                        if(secondSelection == position){
-                            secondSelection = -1;
-                            prevSelection = (ViewGroup) gridView.getChildAt(secondSelection);
-                            highlightCell(prevSelection, false);
-
-                        }
-                        else if(firstSelection == position){
-                            firstSelection = -1;
-                            highlightCell(view, false);
-                        }
-
-                        secondSelection = position;
-                        highlightCell(view, true);
-                    }*/
-                    if(firstSelection == -1){
-                        firstSelection = position;
-                        highlightCell(view, true);
-                    }
-                    else if(secondSelection == -1){
+                    if(firstSelection == UNSELECTED){
 
                         //highlight gridcell to indicate it is selected
-                        highlightCell(view, true);
+                        firstSelection = position;
+                        selectCell(view, true);
+                    }
+                    else if(secondSelection == UNSELECTED){
 
-                        //get letter of current selection as well as the view and letter of the previous selection
+                        GameWord foundWord = null;
+
+                        //mark second selection and highlight gridcell to indicate it is selected
+                        secondSelection = position;
+                        selectCell(view, true);
+
+                        //get view of current selection as well as view and textview of previous selection
                         TextView currTextView = view.findViewById(R.id.text_letter);
                         ViewGroup prevSelection = (ViewGroup) gridView.getChildAt(firstSelection);
                         TextView prevTextView = prevSelection.findViewById(R.id.text_letter);
 
-                        animate(view, "backgroundColor", Color.parseColor("#445478"), Color.TRANSPARENT);
-                        animate(currTextView, "textColor", Color.parseColor("#FFFFFF"), Color.parseColor("#757575"));
-
-                        animate(prevSelection, "backgroundColor", Color.parseColor("#445478"), Color.TRANSPARENT);
-                        animate(prevTextView, "textColor", Color.parseColor("#FFFFFF"), Color.parseColor("#757575"));
-
+                        //check if user has found any of the words with their selection
                         for(GameWord word : gameWords){
                             if((firstSelection == word.getStartCell() && secondSelection == word.getEndCell()) || (firstSelection == word.getEndCell() && secondSelection == word.getStartCell())){
-                                Log.d("Test", "Word Found: " + word.toString());
+                                foundWord = word;
                                 break;
                             }
                         }
 
-                        view.setTag(false);
-                        prevSelection.setTag(false);
-                        secondSelection = -1;
-                        firstSelection = -1;
+                        if(foundWord != null){
+
+                            //animate all grid cell positions that are in the word
+                            for(int i = 0; i < foundWord.getWordSize(); i++){
+                                ViewGroup gridCell = (ViewGroup) gridView.getChildAt(foundWord.getCellPosition(i));
+                                TextView cellLetter = gridCell.findViewById(R.id.text_letter);
+
+                                animateCell(gridCell, "backgroundColor", Color.parseColor((String) gridCell.getTag(R.string.background_color)), Color.parseColor(currentColor));
+                                animateCell(cellLetter, "textColor", Color.parseColor((String) gridCell.getTag(R.string.text_color)), Color.parseColor(currentTextColor));
+
+                                gridCell.setTag(R.string.background_color, currentColor);
+                                gridCell.setTag(R.string.text_color, currentTextColor);
+                            }
+
+                            //identify the found word and animate it on the words list to indicate that it has been found
+                            for(int i = 0; i < wordsListView.getCount(); i++){
+                                ViewGroup wordView = (ViewGroup) wordsListView.getChildAt(i);
+                                CardView wordContainer = wordView.findViewById(R.id.word_item_container);
+                                CardView wordBackground = wordView.findViewById(R.id.word_item_background);
+                                TextView wordText = wordView.findViewById(R.id.text_word);
+
+                                if(foundWord.getGameWord().equals(wordView.getTag())){
+                                    animateCell(wordContainer, "cardBackgroundColor", Color.TRANSPARENT, Color.parseColor(currentColor));
+                                    animateCell(wordBackground, "cardBackgroundColor", R.color.word_background, Color.parseColor(currentColor));
+                                    animateCell(wordText, "textColor", Color.parseColor("#757575"), Color.parseColor(currentTextColor));
+                                }
+                            }
+
+                            //update the words found
+                            wordsFound++;
+                            numWords.setText(wordsFound + "/" + usedWords.length);
+
+                            //update word colors
+                            updateColors(colors);
+                        }
+                        else{
+                            animateCell(view, "backgroundColor", Color.parseColor(currentColor), Color.parseColor((String) view.getTag(R.string.background_color)));
+                            animateCell(currTextView, "textColor", Color.parseColor(currentTextColor), Color.parseColor((String) view.getTag(R.string.text_color)));
+
+                            animateCell(prevSelection, "backgroundColor", Color.parseColor(currentColor), Color.parseColor((String) prevSelection.getTag(R.string.background_color)));
+                            animateCell(prevTextView, "textColor", Color.parseColor(currentTextColor), Color.parseColor((String) prevSelection.getTag(R.string.text_color)));
+                        }
+
+                        //update current view and previous view after selection
+                        view.setTag(R.string.active, false);
+                        prevSelection.setTag(R.string.active, false);
+                        secondSelection = UNSELECTED;
+                        firstSelection = UNSELECTED;
                     }
                 }
             }
@@ -179,6 +193,19 @@ public class MainActivity extends AppCompatActivity {
         word_found = findViewById(R.id.word_found_txt);
         numWords = findViewById(R.id.num_words_found);
         wordsListView = findViewById(R.id.words_list);
+    }
+
+    public void shuffleArray(String[] ar) {
+        Random rnd = new Random();
+
+        for (int i = ar.length - 1; i > 0; i--) {
+            int index = rnd.nextInt(i + 1);
+
+            //swap random index with current index
+            String a = ar[index];
+            ar[index] = ar[i];
+            ar[i] = a;
+        }
     }
 
     /*
@@ -252,6 +279,7 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<Integer> directionsList = new ArrayList<Integer>();
         int wordLength = gameWords[gameWordIndex].getGameWord().length();
         char[] word = gameWords[gameWordIndex].getGameWord().toCharArray();
+        int[] positions = new int[wordLength];
 
         //place oridinals of all directions into array in order
         for(int d = 0; d < directions.length; d++){
@@ -277,17 +305,15 @@ public class MainActivity extends AppCompatActivity {
         //iterate through letters in the current word
         for(int l = 0; l < wordLength; l++){
 
-            //input letter in the grid
+            //input letter in the grid and save the current grid cell position of the letter
             grid.addGridData(pos, word[l]);
+            positions[l] = pos;
 
-            if(l == 0){
-                gameWords[gameWordIndex].setStartCell(pos);
-            }
-            else if(l == wordLength -1){
-                gameWords[gameWordIndex].setEndCell(pos);
-            }
             pos = findNextCell(directions[dirOrdinal], pos, grid.getNumCol());
         }
+
+        //save the grid cell positions of the word
+        gameWords[gameWordIndex].setPositionList(positions);
     }
 
     public ArrayList<Integer> findCellPositions(Direction dir, Grid grid, ArrayList<Integer> cellArray, char [] word){
@@ -398,31 +424,38 @@ public class MainActivity extends AppCompatActivity {
     /*
      * Grid selection functionality methods
      */
-    public void highlightCell(View view, boolean active){
+    public void selectCell(View view, boolean active){
 
         if(active){
-            view.setTag(active);
-            view.setBackgroundColor(Color.parseColor("#445478"));
+            view.setTag(R.string.active, active);
+            view.setBackgroundColor(Color.parseColor(currentColor));
 
             TextView textView = view.findViewById(R.id.text_letter);
-            textView.setTextColor(Color.parseColor("#FFFFFF"));
+            textView.setTextColor(Color.parseColor(currentTextColor));
         }
         else{
-            view.setTag(active);
-            view.setBackgroundColor(Color.TRANSPARENT);
+            view.setTag(R.string.active, active);
+            view.setBackgroundColor(Color.parseColor((String) view.getTag(R.string.background_color)));
 
             TextView textView = view.findViewById(R.id.text_letter);
-            textView.setTextColor(Color.parseColor("#757575"));
+            textView.setTextColor(Color.parseColor((String) view.getTag(R.string.text_color)));
         }
-
     }
 
-    public void animate(View view, String property, int startColor, int endColor){
+    public void animateCell(View view, String property, int startColor, int endColor){
 
         ValueAnimator animator = ObjectAnimator.ofInt(view, property, startColor, endColor);
         animator.setEvaluator(new ArgbEvaluator());
-        animator.setDuration(400);
+        animator.setDuration(350);
         animator.start();
+
+    }
+
+    public void updateColors(String[] colors){
+
+        //update current color and text color for grid cell selection
+        currentColor = colors[wordsFound];
+        currentTextColor = (currentColor.equals(getString(R.string.jonquil)) || currentColor.equals(getString(R.string.lawnGreen)) || currentColor.equals(getString(R.string.voilet))) ? "#757575" : "#FFFFFF";
 
     }
 

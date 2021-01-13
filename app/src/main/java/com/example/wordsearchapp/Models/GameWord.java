@@ -1,32 +1,37 @@
 package com.example.wordsearchapp.Models;
 
+import android.graphics.Color;
 import android.util.Log;
+
+import com.example.wordsearchapp.R;
 
 public class GameWord extends Word {
 
-    private int startCell;
-    private int endCell;
+    private int[] positionList;
 
     public GameWord(int wordSize, String word){
         super(wordSize, word);
-        this.startCell = 0;
-        this.endCell = 0;
+        this.positionList = new int[wordSize];
+    }
+
+    public void setPositionList(int[] positionList){
+        this.positionList = positionList;
+    }
+
+    public int[] getPositionList(){
+        return positionList;
+    }
+
+    public int getCellPosition(int index){
+        return positionList[index];
     }
 
     public int getStartCell() {
-        return startCell;
-    }
-
-    public void setStartCell(int startCell) {
-        this.startCell = startCell;
+        return positionList[0];
     }
 
     public int getEndCell() {
-        return endCell;
-    }
-
-    public void setEndCell(int endCell) {
-        this.endCell = endCell;
+        return positionList[getWordSize()-1];
     }
 
 }

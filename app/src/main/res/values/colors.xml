@@ -7,4 +7,23 @@
 
     <color name="textPrimary">#FDFFFC</color>
     <color name="primaryTheme">#CA054D</color>
+
+    <color name="word_background">#001444</color>
+
+    <string name="jonquil">#F1C40F</string>
+    <string name="lawnGreen">#7CFC00</string>
+    <string name="voilet">#F679E5</string>
+
+    <string-array name="word_colors">
+        <item>#16B8F3</item>
+        <item>#F71735</item>
+        <item>#774936</item>
+        <item>#F1C40F</item>
+        <item>#662E9B</item>
+        <item>#488B49</item>
+        <item>#D65108</item>
+        <item>#DC0073</item>
+        <item>#7CFC00</item>
+        <item>#F679E5</item>
+    </string-array>
 </resources>
