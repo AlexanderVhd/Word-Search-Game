@@ -21,7 +21,7 @@
             android:minHeight="?attr/actionBarSize"/>
 
         <ImageView
-            android:id="@+id/home"
+            android:id="@+id/home_icon"
             android:layout_width="34dp"
             android:layout_height="30dp"
             android:layout_marginStart="8dp"
@@ -50,12 +50,11 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 />
 
-            <TextView
+            <Chronometer
                 android:id="@+id/timer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="4dp"
-                android:text="0:00"
                 android:textSize="22sp"
                 android:textColor="@color/textPrimary"
                 app:layout_constraintStart_toEndOf="@+id/timer_img"

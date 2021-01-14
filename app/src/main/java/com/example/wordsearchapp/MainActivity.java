@@ -9,17 +9,21 @@ import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
+import android.widget.Chronometer;
 import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toolbar;
 
@@ -30,6 +34,7 @@ import com.example.wordsearchapp.Models.Word;
 import org.w3c.dom.Text;
 
 import java.io.Console;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -42,18 +47,21 @@ public class MainActivity extends AppCompatActivity {
     TextView numWords;
     GridView gridView;
     GridView wordsListView;
+    Chronometer timer;
+    ImageView homeIcon;
 
     //declare constants
     final int UNSELECTED = -1;
 
-    //declare necessary variables for word selection color, grid cell selection
+    //declare required global variables for game (word selection colors, grid cell selection, and timer)
     String currentColor = null, currentTextColor = null;
     int firstSelection = UNSELECTED, secondSelection = UNSELECTED;
-    int numCol;
     int wordsFound = 0;
+    boolean timerRunning = false;
+    long timerOffset;
 
     //declare used words, directions, and random object
-    final String [] usedWords = {"APOLLO", "ZEUS", "HERA", "HADES", "CRONOS", "GAIA", "ARES"};
+    final String [] usedWords = {"APOLLO", "ZEUS", "HERA", "POSEIDEN", "HADES", "CRONOS", "GAIA", "ARES"};
     Direction[] directions = Direction.values();
     Random random = new Random();
 
@@ -62,18 +70,18 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //setup UI widgets and UI toolbar and get gridsize from menu activity
+        //setup UI widgets and get gridsize from menu activity
         setupWidgets();
-        numCol = getIntent().getIntExtra("gridSize", 10);
+        int numCol = getIntent().getIntExtra("gridSize", 10);
 
-        //setup gamewords and grid objects
+        //setup gamewords, grid objects, and color array variables
         final GameWord gameWords[] = new GameWord[usedWords.length];
         Grid currGrid = new Grid(numCol);
-
-        //setup color array, rearrange color array for game words, and update the colors
         final String[] colors = this.getResources().getStringArray(R.array.word_colors);
-        shuffleArray(colors);
-        updateColors(colors);
+
+        //rearrange color array for game words, and set the first color for cell selection
+        shuffleColors(colors);
+        updateSelectionColor(colors);
 
         //initialize gameword objects with the used words
         for(int i = 0; i < usedWords.length; i++){
@@ -93,6 +101,16 @@ public class MainActivity extends AppCompatActivity {
 
         //set UI elements
         numWords.setText("0/" + usedWords.length);
+        startTimer();
+
+        homeIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, MenuActivity.class);
+                startActivity(intent);
+                finish();
+            }
+        });
 
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -113,12 +131,11 @@ public class MainActivity extends AppCompatActivity {
                         firstSelection = position;
                         selectCell(view, true);
                     }
-                    else if(secondSelection == UNSELECTED){
+                    else{
 
                         GameWord foundWord = null;
 
-                        //mark second selection and highlight gridcell to indicate it is selected
-                        secondSelection = position;
+                        //highlight gridcell to indicate it is selected
                         selectCell(view, true);
 
                         //get view of current selection as well as view and textview of previous selection
@@ -128,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
 
                         //check if user has found any of the words with their selection
                         for(GameWord word : gameWords){
-                            if((firstSelection == word.getStartCell() && secondSelection == word.getEndCell()) || (firstSelection == word.getEndCell() && secondSelection == word.getStartCell())){
+                            if((firstSelection == word.getStartCell() && position == word.getEndCell()) || (firstSelection == word.getEndCell() && position == word.getStartCell())){
                                 foundWord = word;
                                 break;
                             }
@@ -166,8 +183,21 @@ public class MainActivity extends AppCompatActivity {
                             wordsFound++;
                             numWords.setText(wordsFound + "/" + usedWords.length);
 
-                            //update word colors
-                            updateColors(colors);
+                            //stop timer and end game if user has found all the words
+                            if(wordsFound == usedWords.length){
+                                stopTimer();
+
+                                float wholeTimeValue = (float) timerOffset/60000;
+                                int minutes = (int) ((float) timerOffset/60000);
+                                double decimalTime = (wholeTimeValue - minutes) * 60;
+
+                                String stringTime = decimalTime < 10 ? "0" + String.valueOf((int) decimalTime) : String.valueOf((int) decimalTime);
+
+                                Log.d("Time", minutes + ":" + stringTime);
+                            }
+
+                            //update the current word color
+                            updateSelectionColor(colors);
                         }
                         else{
                             animateCell(view, "backgroundColor", Color.parseColor(currentColor), Color.parseColor((String) view.getTag(R.string.background_color)));
@@ -180,7 +210,6 @@ public class MainActivity extends AppCompatActivity {
                         //update current view and previous view after selection
                         view.setTag(R.string.active, false);
                         prevSelection.setTag(R.string.active, false);
-                        secondSelection = UNSELECTED;
                         firstSelection = UNSELECTED;
                     }
                 }
@@ -193,20 +222,43 @@ public class MainActivity extends AppCompatActivity {
         word_found = findViewById(R.id.word_found_txt);
         numWords = findViewById(R.id.num_words_found);
         wordsListView = findViewById(R.id.words_list);
+        timer = findViewById(R.id.timer);
+        homeIcon = findViewById(R.id.home_icon);
     }
 
-    public void shuffleArray(String[] ar) {
+    public void shuffleColors(String[] colors) {
         Random rnd = new Random();
 
-        for (int i = ar.length - 1; i > 0; i--) {
+        for (int i = colors.length - 1; i > 0; i--) {
             int index = rnd.nextInt(i + 1);
 
             //swap random index with current index
-            String a = ar[index];
-            ar[index] = ar[i];
-            ar[i] = a;
+            String a = colors[index];
+            colors[index] = colors[i];
+            colors[i] = a;
         }
     }
+
+    public void startTimer(){
+        if(!timerRunning){
+
+            //set base for timer from the offset, then start timer
+            timer.setBase(SystemClock.elapsedRealtime() - timerOffset);
+            timer.start();
+            timerRunning = true;
+        }
+    }
+
+    public void stopTimer(){
+        if(timerRunning){
+
+            //stop timer and save the time elapsed from the point at which the timer started (used when continuing timer again)
+            timer.stop();
+            timerOffset = SystemClock.elapsedRealtime() - timer.getBase();
+            timerRunning = false;
+        }
+    }
+
 
     /*
     * Grid layout and data setup methods
@@ -260,16 +312,16 @@ public class MainActivity extends AppCompatActivity {
         currGrid.fillGrid();
 
         //setup layout of grid depending on the grid size selected
-        if(numCol == 8){
-            gridView.setNumColumns(numCol);
+        if(currGrid.getNumCol() == 8){
+            gridView.setNumColumns(currGrid.getNumCol());
             gridView.setColumnWidth((int) (35 * scale + 0.5f));
         }
-        else if(numCol == 12){
-            gridView.setNumColumns(numCol);
+        else if(currGrid.getNumCol() == 12){
+            gridView.setNumColumns(currGrid.getNumCol());
             gridView.setColumnWidth((int) (23 * scale + 0.5f));
         }
         else{
-            gridView.setNumColumns(numCol);
+            gridView.setNumColumns(currGrid.getNumCol());
         }
     }
 
@@ -289,14 +341,14 @@ public class MainActivity extends AppCompatActivity {
         //determine if there are available cell positions in given direction
         int dirOrdinal = directionsList.get(dir.ordinal());
         int index = dirOrdinal;
-        cellArray = findCellPositions(directions[dirOrdinal], grid, cellArray, word);
+        cellArray = findFreePositions(directions[dirOrdinal], grid, cellArray, word);
 
         //keep searching for available cell positions in a certain direction until at least one position is found
         while(cellArray.size() <= 0){
             directionsList.remove(index);
             index = random.nextInt(directionsList.size());
             dirOrdinal = directionsList.get(index);
-            cellArray = findCellPositions(directions[dirOrdinal], grid, cellArray, word);
+            cellArray = findFreePositions(directions[dirOrdinal], grid, cellArray, word);
         }
 
         //choose random cell position from cellArray
@@ -316,7 +368,7 @@ public class MainActivity extends AppCompatActivity {
         gameWords[gameWordIndex].setPositionList(positions);
     }
 
-    public ArrayList<Integer> findCellPositions(Direction dir, Grid grid, ArrayList<Integer> cellArray, char [] word){
+    public ArrayList<Integer> findFreePositions(Direction dir, Grid grid, ArrayList<Integer> cellArray, char [] word){
 
         int gridSize = grid.getGridSize();
         int numCol = grid.getNumCol();
@@ -451,12 +503,14 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void updateColors(String[] colors){
+    public void updateSelectionColor(String[] colors){
 
         //update current color and text color for grid cell selection
         currentColor = colors[wordsFound];
         currentTextColor = (currentColor.equals(getString(R.string.jonquil)) || currentColor.equals(getString(R.string.lawnGreen)) || currentColor.equals(getString(R.string.voilet))) ? "#757575" : "#FFFFFF";
 
     }
+
+
 
 }
