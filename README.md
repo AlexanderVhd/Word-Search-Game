@@ -8,5 +8,5 @@ Technologies used: Android Studio (Android SDK)
 
 | Start Menu | Game |
 | :---: |:---:|
-| <img src="https://user-images.githubusercontent.com/34779092/104079036-0651f480-51ef-11eb-96f3-691ef6c37562.png" width="300" height="500"> | <img src="https://user-images.githubusercontent.com/34779092/104079051-179b0100-51ef-11eb-83fb-b4813a8973a0.png" width="300" height="500"> |
+| <img src="https://user-images.githubusercontent.com/34779092/104079036-0651f480-51ef-11eb-96f3-691ef6c37562.png" width="300" height="500"> | <img src="https://user-images.githubusercontent.com/34779092/104629077-ff036e80-5666-11eb-9b72-f3db6895e3de.jpg" width="300" height="500"> |
 
