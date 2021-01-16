@@ -16,6 +16,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
+import android.util.Property;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -43,27 +44,34 @@ import java.util.stream.IntStream;
 
 public class MainActivity extends AppCompatActivity {
 
-    TextView word_found;
     TextView numWords;
     GridView gridView;
     GridView wordsListView;
     Chronometer timer;
     ImageView homeIcon;
+    ImageView reloadIcon;
+    ImageView pausePlayIcon;
 
     //declare constants
     final int UNSELECTED = -1;
 
-    //declare required global variables for game (word selection colors, grid cell selection, and timer)
+    //declare required global variables for game (game grid, game words, word selection colors, grid cell selection, and timer)
+    Grid currGrid;
+    GameWord gameWords[];
+    GridAdapter gridAdapter;
+    WordAdapter wordAdapter;
     String currentColor = null, currentTextColor = null;
-    int firstSelection = UNSELECTED, secondSelection = UNSELECTED;
+    int firstSelection = UNSELECTED;
     int wordsFound = 0;
     boolean timerRunning = false;
     long timerOffset;
+    boolean paused = false;
 
     //declare used words, directions, and random object
     final String [] usedWords = {"APOLLO", "ZEUS", "HERA", "POSEIDEN", "HADES", "CRONOS", "GAIA", "ARES"};
     Direction[] directions = Direction.values();
     Random random = new Random();
+    String[] colors;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,36 +80,10 @@ public class MainActivity extends AppCompatActivity {
 
         //setup UI widgets and get gridsize from menu activity
         setupWidgets();
-        int numCol = getIntent().getIntExtra("gridSize", 10);
+        final int numCol = getIntent().getIntExtra("gridSize", 10);
+        colors = this.getResources().getStringArray(R.array.word_colors);
 
-        //setup gamewords, grid objects, and color array variables
-        final GameWord gameWords[] = new GameWord[usedWords.length];
-        Grid currGrid = new Grid(numCol);
-        final String[] colors = this.getResources().getStringArray(R.array.word_colors);
-
-        //rearrange color array for game words, and set the first color for cell selection
-        shuffleColors(colors);
-        updateSelectionColor(colors);
-
-        //initialize gameword objects with the used words
-        for(int i = 0; i < usedWords.length; i++){
-            gameWords[i] = new GameWord(usedWords[i].length(), usedWords[i]);
-        }
-
-        //setup data and layout of the word search grid
-        setupGrid(currGrid, gameWords);
-
-        //set grid adapter to display the grid
-        final GridAdapter gridAdapter = new GridAdapter(this, currGrid);
-        gridView.setAdapter(gridAdapter);
-
-        //set words list grid adapter to display the used words
-        WordAdapter wordAdapter = new WordAdapter(this, gameWords);
-        wordsListView.setAdapter(wordAdapter);
-
-        //set UI elements
-        numWords.setText("0/" + usedWords.length);
-        startTimer();
+        setupGame(numCol);
 
         homeIcon.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -109,6 +91,52 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, MenuActivity.class);
                 startActivity(intent);
                 finish();
+            }
+        });
+
+        reloadIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                //reset all variables for game
+                currentColor = null;
+                currentTextColor = null;
+                wordsFound = 0;
+                firstSelection = UNSELECTED;
+
+                //reset variables for timer
+                timerRunning = false;
+                timerOffset = 0;
+
+                setupGame(numCol);
+
+            }
+        });
+
+        pausePlayIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(paused){
+
+                    //set UI elements for a on going game
+                    pausePlayIcon.setImageResource(R.drawable.pause_icon);
+                    animateGrid(gridView, View.ALPHA, 0f, 1f);
+
+                    //resume the timer
+                    paused = false;
+                    startTimer();
+                }
+                else{
+
+                    //set UI elements for a paused game
+                    pausePlayIcon.setImageResource(R.drawable.play_icon);
+                    animateGrid(gridView, View.ALPHA, 1f, 0f);
+
+                    //pause the timer
+                    paused = true;
+                    stopTimer();
+
+                }
             }
         });
 
@@ -219,11 +247,43 @@ public class MainActivity extends AppCompatActivity {
 
     public void setupWidgets(){
         gridView = (GridView) findViewById(R.id.grid);
-        word_found = findViewById(R.id.word_found_txt);
+        reloadIcon = findViewById(R.id.reload_grid);
+        pausePlayIcon = findViewById(R.id.pause_play_game);
         numWords = findViewById(R.id.num_words_found);
         wordsListView = findViewById(R.id.words_list);
         timer = findViewById(R.id.timer);
         homeIcon = findViewById(R.id.home_icon);
+    }
+
+    public void setupGame(int numCol){
+
+        //setup gamewords, grid objects, and color array variables
+        gameWords = new GameWord[usedWords.length];
+        currGrid = new Grid(numCol);
+
+        //rearrange color array for game words, and set the first color for cell selection
+        shuffleColors(colors);
+        updateSelectionColor(colors);
+
+        //initialize gameword objects with the used words
+        for(int i = 0; i < usedWords.length; i++){
+            gameWords[i] = new GameWord(usedWords[i].length(), usedWords[i]);
+        }
+
+        //setup data and layout of the word search grid
+        setupGrid(currGrid, gameWords);
+
+        //set grid adapter to display the grid
+        gridAdapter = new GridAdapter(this, currGrid);
+        gridView.setAdapter(gridAdapter);
+
+        //set words list grid adapter to display the used words
+        wordAdapter = new WordAdapter(this, gameWords);
+        wordsListView.setAdapter(wordAdapter);
+
+        //set UI elements
+        numWords.setText("0/" + usedWords.length);
+        startTimer();
     }
 
     public void shuffleColors(String[] colors) {
@@ -261,7 +321,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     /*
-    * Grid layout and data setup methods
+    * Grid layout and grid data setup methods
      */
     public void setupGrid(Grid currGrid, GameWord gameWords[]){
 
@@ -474,7 +534,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /*
-     * Grid selection functionality methods
+     * Grid selection functionality and gameplay methods
      */
     public void selectCell(View view, boolean active){
 
@@ -494,13 +554,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void animateCell(View view, String property, int startColor, int endColor){
+    public void animateCell(View view, String property, int startValue, int endValue){
 
-        ValueAnimator animator = ObjectAnimator.ofInt(view, property, startColor, endColor);
+        ValueAnimator animator = ObjectAnimator.ofInt(view, property, startValue, endValue);
         animator.setEvaluator(new ArgbEvaluator());
         animator.setDuration(350);
         animator.start();
-
     }
 
     public void updateSelectionColor(String[] colors){
@@ -509,6 +568,13 @@ public class MainActivity extends AppCompatActivity {
         currentColor = colors[wordsFound];
         currentTextColor = (currentColor.equals(getString(R.string.jonquil)) || currentColor.equals(getString(R.string.lawnGreen)) || currentColor.equals(getString(R.string.voilet))) ? "#757575" : "#FFFFFF";
 
+    }
+
+    public void animateGrid(View view, Property<View, Float> property, float startValue, float endValue){
+
+        ValueAnimator animator = ObjectAnimator.ofFloat(view, property, startValue, endValue);
+        animator.setDuration(250);
+        animator.start();
     }
 
 
