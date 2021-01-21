@@ -1,46 +1,31 @@
 package com.example.wordsearchapp;
 
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
-import androidx.core.content.ContextCompat;
-
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
-import android.content.Context;
 import android.content.Intent;
-import android.content.res.TypedArray;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
+import android.graphics.Path;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
 import android.util.Property;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.Chronometer;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toolbar;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 
 import com.example.wordsearchapp.Models.GameWord;
 import com.example.wordsearchapp.Models.Grid;
-import com.example.wordsearchapp.Models.Word;
 
-import org.w3c.dom.Text;
-
-import java.io.Console;
-import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -67,10 +52,8 @@ public class MainActivity extends AppCompatActivity {
     long timerOffset;
     boolean paused = false;
 
-    //declare used words, directions, and random object
-    final String [] usedWords = {"APOLLO", "ZEUS", "HERA", "POSEIDEN", "HADES", "CRONOS", "GAIA", "ARES"};
-    Direction[] directions = Direction.values();
-    Random random = new Random();
+    //declare used words and colors
+    final String [] usedWords = {"ZEUS", "HERA", "POSEIDEN", "HADES", "APOLLO", "ARES", "HELIOS", "ATHENA", "DEMETER"};
     String[] colors;
 
     @Override
@@ -80,10 +63,12 @@ public class MainActivity extends AppCompatActivity {
 
         //setup UI widgets and get gridsize from menu activity
         setupWidgets();
-        final int numCol = getIntent().getIntExtra("gridSize", 10);
+        final int numCol = getIntent().getIntExtra("gridCols", 8);
+        final int numRow = getIntent().getIntExtra("gridRows", 10);
         colors = this.getResources().getStringArray(R.array.word_colors);
 
-        setupGame(numCol);
+        //initiate word search game
+        setupGame(numCol, numRow);
 
         homeIcon.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -108,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
                 timerRunning = false;
                 timerOffset = 0;
 
-                setupGame(numCol);
+                setupGame(numCol, numRow);
 
             }
         });
@@ -172,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
                         TextView prevTextView = prevSelection.findViewById(R.id.text_letter);
 
                         //check if user has found any of the words with their selection
-                        for(GameWord word : gameWords){
+                        for(GameWord word : currGrid.getGameWords()){
                             if((firstSelection == word.getStartCell() && position == word.getEndCell()) || (firstSelection == word.getEndCell() && position == word.getStartCell())){
                                 foundWord = word;
                                 break;
@@ -255,30 +240,24 @@ public class MainActivity extends AppCompatActivity {
         homeIcon = findViewById(R.id.home_icon);
     }
 
-    public void setupGame(int numCol){
+    public void setupGame(int numCol, int numRow){
 
-        //setup gamewords, grid objects, and color array variables
-        gameWords = new GameWord[usedWords.length];
-        currGrid = new Grid(numCol);
+        //setup grid objects
+        currGrid = new Grid(numCol, numRow, usedWords);
 
         //rearrange color array for game words, and set the first color for cell selection
         shuffleColors(colors);
         updateSelectionColor(colors);
 
-        //initialize gameword objects with the used words
-        for(int i = 0; i < usedWords.length; i++){
-            gameWords[i] = new GameWord(usedWords[i].length(), usedWords[i]);
-        }
-
         //setup data and layout of the word search grid
-        setupGrid(currGrid, gameWords);
+        setupGrid(currGrid);
 
         //set grid adapter to display the grid
         gridAdapter = new GridAdapter(this, currGrid);
         gridView.setAdapter(gridAdapter);
 
         //set words list grid adapter to display the used words
-        wordAdapter = new WordAdapter(this, gameWords);
+        wordAdapter = new WordAdapter(this, currGrid.getGameWords());
         wordsListView.setAdapter(wordAdapter);
 
         //set UI elements
@@ -319,56 +298,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-    /*
-    * Grid layout and grid data setup methods
-     */
-    public void setupGrid(Grid currGrid, GameWord gameWords[]){
+    public void setupGrid(Grid currGrid){
 
         //get density of screen for conversion of dp to px
         final float scale = getApplicationContext().getResources().getDisplayMetrics().density;
 
-        //iterate through every word in the used words list and use them to populate the grid
-        for(int i = 0; i < gameWords.length; i++){
-
-            Direction wordDirection = chooseDirection(directions);
-
-            switch (wordDirection){
-                case Top:
-                    populateWord(Direction.Top, currGrid, gameWords, i);
-                    break;
-
-                case Left:
-                    populateWord(Direction.Left, currGrid, gameWords, i);
-                    break;
-
-                case Right:
-                    populateWord(Direction.Right, currGrid, gameWords, i);
-                    break;
-
-                case Down:
-                    populateWord(Direction.Down, currGrid, gameWords, i);
-                    break;
-
-                case TopLeft:
-                    populateWord(Direction.TopLeft, currGrid, gameWords, i);
-                    break;
-
-                case TopRight:
-                    populateWord(Direction.TopRight, currGrid, gameWords, i);
-                    break;
-
-                case DownLeft:
-                    populateWord(Direction.DownLeft, currGrid, gameWords, i);
-                    break;
-
-                case DownRight:
-                    populateWord(Direction.DownRight, currGrid, gameWords, i);
-                    break;
-
-            }
-        }
-
+        //setup the grid data
+        currGrid.populateGrid();
         currGrid.fillGrid();
 
         //setup layout of grid depending on the grid size selected
@@ -383,154 +319,6 @@ public class MainActivity extends AppCompatActivity {
         else{
             gridView.setNumColumns(currGrid.getNumCol());
         }
-    }
-
-    public void populateWord(Direction dir, Grid grid, GameWord gameWords[], int gameWordIndex){
-
-        ArrayList<Integer> cellArray = new ArrayList<Integer>();
-        ArrayList<Integer> directionsList = new ArrayList<Integer>();
-        int wordLength = gameWords[gameWordIndex].getGameWord().length();
-        char[] word = gameWords[gameWordIndex].getGameWord().toCharArray();
-        int[] positions = new int[wordLength];
-
-        //place oridinals of all directions into array in order
-        for(int d = 0; d < directions.length; d++){
-            directionsList.add(d);
-        }
-
-        //determine if there are available cell positions in given direction
-        int dirOrdinal = directionsList.get(dir.ordinal());
-        int index = dirOrdinal;
-        cellArray = findFreePositions(directions[dirOrdinal], grid, cellArray, word);
-
-        //keep searching for available cell positions in a certain direction until at least one position is found
-        while(cellArray.size() <= 0){
-            directionsList.remove(index);
-            index = random.nextInt(directionsList.size());
-            dirOrdinal = directionsList.get(index);
-            cellArray = findFreePositions(directions[dirOrdinal], grid, cellArray, word);
-        }
-
-        //choose random cell position from cellArray
-        int pos = cellArray.get(random.nextInt(cellArray.size()));
-
-        //iterate through letters in the current word
-        for(int l = 0; l < wordLength; l++){
-
-            //input letter in the grid and save the current grid cell position of the letter
-            grid.addGridData(pos, word[l]);
-            positions[l] = pos;
-
-            pos = findNextCell(directions[dirOrdinal], pos, grid.getNumCol());
-        }
-
-        //save the grid cell positions of the word
-        gameWords[gameWordIndex].setPositionList(positions);
-    }
-
-    public ArrayList<Integer> findFreePositions(Direction dir, Grid grid, ArrayList<Integer> cellArray, char [] word){
-
-        int gridSize = grid.getGridSize();
-        int numCol = grid.getNumCol();
-        int wordLength = word.length;
-
-        //iterate through grid cells
-        for(int c = 0; c < gridSize; c++){
-            if(checkCell(dir, c, numCol, wordLength)){
-                int nextCell = c;
-                boolean letterPos = true;
-
-                //iterate through letters in the current word
-                for(int l = 0; l < wordLength; l++){
-
-                    //check letter positions on grid to see if they are empty or have a matching letter
-                    if(sameLetter(word[l], grid.getGridData(nextCell)) || grid.getGridData(nextCell) == '\u0000'){
-                        nextCell = findNextCell(dir, nextCell, numCol);
-                    }
-                    else{
-                        letterPos = false;
-                        break;
-                    }
-
-                }
-
-                if(letterPos){
-                    cellArray.add(c);
-                }
-
-            }
-        }
-        return cellArray;
-    }
-
-    public boolean checkCell(Direction dir, int currentCell, int numCol, int wordLength){
-        switch (dir){
-            case Top:
-                return currentCell+1 > numCol * (wordLength-1);
-
-            case Left:
-                return (currentCell+1) % numCol >= wordLength || (currentCell+1) % numCol == 0;
-
-            case Right:
-                return (currentCell+1) % numCol <= numCol - (wordLength-1) && (currentCell+1) % numCol != 0;
-
-            case Down:
-                return currentCell+1 <= (numCol * numCol) - (numCol * (wordLength - 1));
-
-            case TopLeft:
-                return (currentCell+1 > numCol * (wordLength-1)) && ((currentCell+1) % numCol >= wordLength || (currentCell+1) % numCol == 0);
-
-            case TopRight:
-                return (currentCell+1 > numCol * (wordLength-1)) && ((currentCell+1) % numCol <= numCol - (wordLength-1) && (currentCell+1) % numCol != 0);
-
-            case DownLeft:
-                return (currentCell+1 <= (numCol * numCol) - (numCol * (wordLength - 1))) && ((currentCell+1) % numCol >= wordLength || (currentCell+1) % numCol == 0);
-
-            case DownRight:
-                return (currentCell+1 <= (numCol * numCol) - (numCol * (wordLength - 1))) && ((currentCell+1) % numCol <= numCol - (wordLength-1) && (currentCell+1) % numCol != 0);
-
-            default:
-                return false;
-        }
-    }
-
-    public int findNextCell(Direction dir, int currentCell, int numCol){
-        switch (dir){
-            case Top:
-                return currentCell - numCol;
-
-            case Left:
-                return currentCell - 1;
-
-            case Right:
-                return currentCell + 1;
-
-            case Down:
-                return currentCell + numCol;
-
-            case TopLeft:
-                return currentCell - (numCol + 1);
-
-            case TopRight:
-                return currentCell - (numCol - 1);
-
-            case DownLeft:
-                return currentCell + (numCol - 1);
-
-            case DownRight:
-                return currentCell + (numCol + 1);
-
-            default:
-                return currentCell;
-        }
-    }
-
-    public Direction chooseDirection(Direction [] directions){
-        return directions[random.nextInt(directions.length)];
-    }
-
-    public boolean sameLetter(char letter1, char letter2){
-        return letter1 == letter2;
     }
 
     /*
@@ -576,7 +364,5 @@ public class MainActivity extends AppCompatActivity {
         animator.setDuration(250);
         animator.start();
     }
-
-
 
 }

@@ -7,8 +7,8 @@
     <string name="text_color">2</string>
 
     <string-array name="grid_options">
-        <item>8x8</item>
-        <item>10x10</item>
-        <item>12x12</item>
+        <item>8x10</item>
+        <item>10x12</item>
+        <item>12x14</item>
     </string-array>
 </resources>

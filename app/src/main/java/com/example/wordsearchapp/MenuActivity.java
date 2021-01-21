@@ -19,7 +19,8 @@ public class MenuActivity extends AppCompatActivity implements AdapterView.OnIte
     Button startBtn;
     Spinner spinner;
 
-    int gridSize = 10;
+    int gridCols = 8;
+    int gridRows = 10;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +34,8 @@ public class MenuActivity extends AppCompatActivity implements AdapterView.OnIte
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MenuActivity.this, MainActivity.class);
-                intent.putExtra("gridSize", gridSize);
+                intent.putExtra("gridCols", gridCols);
+                intent.putExtra("gridRows", gridRows);
                 startActivity(intent);
             }
         });
@@ -62,13 +64,16 @@ public class MenuActivity extends AppCompatActivity implements AdapterView.OnIte
 
         //set grid size based on dropdown menu item selected
         if(option.equals(optionsList[0])){
-            gridSize = 8;
+            gridCols = 8;
+            gridRows = 10;
         }
         else if(option.equals(optionsList[1])){
-            gridSize = 10;
+            gridCols = 10;
+            gridRows = 12;
         }
         else if(option.equals(optionsList[2])){
-            gridSize = 12;
+            gridCols = 12;
+            gridRows = 14;
         }
     }
 
