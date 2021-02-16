@@ -5,7 +5,6 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Path;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
@@ -23,11 +22,11 @@ import androidx.cardview.widget.CardView;
 
 import com.example.wordsearchapp.Models.GameWord;
 import com.example.wordsearchapp.Models.Grid;
+import com.example.wordsearchapp.Models.Level;
 
-import java.util.ArrayList;
 import java.util.Random;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements CallBackListener{
 
     TextView numWords;
     GridView gridView;
@@ -46,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     GridAdapter gridAdapter;
     WordAdapter wordAdapter;
     String currentColor = null, currentTextColor = null;
+    int numCol, numRow;
     int firstSelection = UNSELECTED;
     int wordsFound = 0;
     boolean timerRunning = false;
@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
     boolean paused = false;
 
     //declare used words and colors
-    final String [] usedWords = {"ZEUS", "HERA", "POSEIDEN", "HADES", "APOLLO", "ARES", "HELIOS", "ATHENA", "DEMETER"};
+    final String [] usedWords = {"ZEUS", "HERA", "POSEIDEN", "HADES", "APOLLO", "ARES", "HELIOS", "ATHENA", "ARTEMIS", "DEMETER"};
     String[] colors;
 
     @Override
@@ -61,10 +61,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //setup UI widgets and get gridsize from menu activity
+        //setup UI widgets and get grid dimensions and level from menu activity
         setupWidgets();
-        final int numCol = getIntent().getIntExtra("gridCols", 8);
-        final int numRow = getIntent().getIntExtra("gridRows", 10);
+        numCol = getIntent().getIntExtra("gridCols", 8);
+        numRow = getIntent().getIntExtra("gridRows", 10);
+        final Level level = (Level) getIntent().getSerializableExtra("level");
         colors = this.getResources().getStringArray(R.array.word_colors);
 
         //initiate word search game
@@ -82,19 +83,7 @@ public class MainActivity extends AppCompatActivity {
         reloadIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                //reset all variables for game
-                currentColor = null;
-                currentTextColor = null;
-                wordsFound = 0;
-                firstSelection = UNSELECTED;
-
-                //reset variables for timer
-                timerRunning = false;
-                timerOffset = 0;
-
-                setupGame(numCol, numRow);
-
+                resetGame();
             }
         });
 
@@ -166,31 +155,8 @@ public class MainActivity extends AppCompatActivity {
 
                         if(foundWord != null){
 
-                            //animate all grid cell positions that are in the word
-                            for(int i = 0; i < foundWord.getWordSize(); i++){
-                                ViewGroup gridCell = (ViewGroup) gridView.getChildAt(foundWord.getCellPosition(i));
-                                TextView cellLetter = gridCell.findViewById(R.id.text_letter);
-
-                                animateCell(gridCell, "backgroundColor", Color.parseColor((String) gridCell.getTag(R.string.background_color)), Color.parseColor(currentColor));
-                                animateCell(cellLetter, "textColor", Color.parseColor((String) gridCell.getTag(R.string.text_color)), Color.parseColor(currentTextColor));
-
-                                gridCell.setTag(R.string.background_color, currentColor);
-                                gridCell.setTag(R.string.text_color, currentTextColor);
-                            }
-
-                            //identify the found word and animate it on the words list to indicate that it has been found
-                            for(int i = 0; i < wordsListView.getCount(); i++){
-                                ViewGroup wordView = (ViewGroup) wordsListView.getChildAt(i);
-                                CardView wordContainer = wordView.findViewById(R.id.word_item_container);
-                                CardView wordBackground = wordView.findViewById(R.id.word_item_background);
-                                TextView wordText = wordView.findViewById(R.id.text_word);
-
-                                if(foundWord.getGameWord().equals(wordView.getTag())){
-                                    animateCell(wordContainer, "cardBackgroundColor", Color.TRANSPARENT, Color.parseColor(currentColor));
-                                    animateCell(wordBackground, "cardBackgroundColor", R.color.word_background, Color.parseColor(currentColor));
-                                    animateCell(wordText, "textColor", Color.parseColor("#757575"), Color.parseColor(currentTextColor));
-                                }
-                            }
+                            //animate word on grid and words list
+                            animateWord(foundWord);
 
                             //update the words found
                             wordsFound++;
@@ -200,13 +166,18 @@ public class MainActivity extends AppCompatActivity {
                             if(wordsFound == usedWords.length){
                                 stopTimer();
 
-                                float wholeTimeValue = (float) timerOffset/60000;
-                                int minutes = (int) ((float) timerOffset/60000);
-                                double decimalTime = (wholeTimeValue - minutes) * 60;
+                                //set time and words found data for end game fragment
+                                Bundle bundle = new Bundle();
+                                bundle.putInt("timeValue", (int) timerOffset);
+                                bundle.putInt("wordsFound", wordsFound);
+                                bundle.putSerializable("level", level);
 
-                                String stringTime = decimalTime < 10 ? "0" + String.valueOf((int) decimalTime) : String.valueOf((int) decimalTime);
+                                //setup endgame fragment with data bundle
+                                EndGameFragment endGameFragment = new EndGameFragment();
+                                endGameFragment.setArguments(bundle);
+                                endGameFragment.setCancelable(false);
+                                endGameFragment.show(getSupportFragmentManager(), "EndGame");
 
-                                Log.d("Time", minutes + ":" + stringTime);
                             }
 
                             //update the current word color
@@ -263,6 +234,21 @@ public class MainActivity extends AppCompatActivity {
         //set UI elements
         numWords.setText("0/" + usedWords.length);
         startTimer();
+    }
+
+    public void resetGame(){
+
+        //reset all variables for game
+        currentColor = null;
+        currentTextColor = null;
+        wordsFound = 0;
+        firstSelection = UNSELECTED;
+
+        //reset variables for timer
+        timerRunning = false;
+        timerOffset = 0;
+
+        setupGame(numCol, numRow);
     }
 
     public void shuffleColors(String[] colors) {
@@ -354,7 +340,7 @@ public class MainActivity extends AppCompatActivity {
 
         //update current color and text color for grid cell selection
         currentColor = colors[wordsFound];
-        currentTextColor = (currentColor.equals(getString(R.string.jonquil)) || currentColor.equals(getString(R.string.lawnGreen)) || currentColor.equals(getString(R.string.voilet))) ? "#757575" : "#FFFFFF";
+        currentTextColor = (currentColor.equals(getString(R.string.jonquil)) || currentColor.equals(getString(R.string.lawnGreen)) || currentColor.equals(getString(R.string.voilet))) ? "#0A0A0A" : "#FFFFFF";
 
     }
 
@@ -365,4 +351,37 @@ public class MainActivity extends AppCompatActivity {
         animator.start();
     }
 
+    public void animateWord(GameWord foundWord){
+
+        //animate all grid cell positions that are in the word
+        for(int i = 0; i < foundWord.getWordSize(); i++){
+            ViewGroup gridCell = (ViewGroup) gridView.getChildAt(foundWord.getCellPosition(i));
+            TextView cellLetter = gridCell.findViewById(R.id.text_letter);
+
+            animateCell(gridCell, "backgroundColor", Color.parseColor((String) gridCell.getTag(R.string.background_color)), Color.parseColor(currentColor));
+            animateCell(cellLetter, "textColor", Color.parseColor((String) gridCell.getTag(R.string.text_color)), Color.parseColor(currentTextColor));
+
+            gridCell.setTag(R.string.background_color, currentColor);
+            gridCell.setTag(R.string.text_color, currentTextColor);
+        }
+
+        //identify the found word and animate it on the words list to indicate that it has been found
+        for(int i = 0; i < wordsListView.getCount(); i++){
+            ViewGroup wordView = (ViewGroup) wordsListView.getChildAt(i);
+            CardView wordContainer = wordView.findViewById(R.id.word_item_container);
+            CardView wordBackground = wordView.findViewById(R.id.word_item_background);
+            TextView wordText = wordView.findViewById(R.id.text_word);
+
+            if(foundWord.getGameWord().equals(wordView.getTag())){
+                animateCell(wordContainer, "cardBackgroundColor", Color.TRANSPARENT, Color.parseColor(currentColor));
+                animateCell(wordBackground, "cardBackgroundColor", R.color.secondaryTheme, Color.parseColor(currentColor));
+                animateCell(wordText, "textColor", Color.parseColor("#757575"), Color.parseColor(currentTextColor));
+            }
+        }
+    }
+
+    @Override
+    public void onDismiss() {
+        resetGame();
+    }
 }

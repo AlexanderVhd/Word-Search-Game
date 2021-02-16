@@ -13,6 +13,8 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.example.wordsearchapp.Models.Level;
+
 
 public class MenuActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
@@ -21,6 +23,7 @@ public class MenuActivity extends AppCompatActivity implements AdapterView.OnIte
 
     int gridCols = 8;
     int gridRows = 10;
+    Level level = Level.EASY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +39,7 @@ public class MenuActivity extends AppCompatActivity implements AdapterView.OnIte
                 Intent intent = new Intent(MenuActivity.this, MainActivity.class);
                 intent.putExtra("gridCols", gridCols);
                 intent.putExtra("gridRows", gridRows);
+                intent.putExtra("level", level);
                 startActivity(intent);
             }
         });
@@ -66,14 +70,17 @@ public class MenuActivity extends AppCompatActivity implements AdapterView.OnIte
         if(option.equals(optionsList[0])){
             gridCols = 8;
             gridRows = 10;
+            level = Level.EASY;
         }
         else if(option.equals(optionsList[1])){
             gridCols = 10;
             gridRows = 12;
+            level = Level.MEDIUM;
         }
         else if(option.equals(optionsList[2])){
             gridCols = 12;
             gridRows = 14;
+            level = Level.HARD;
         }
     }
 

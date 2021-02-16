@@ -7,8 +7,10 @@
 
     <color name="textPrimary">#FDFFFC</color>
     <color name="primaryTheme">#CA054D</color>
-
-    <color name="word_background">#001444</color>
+    <color name="secondaryTheme">#001444</color>
+    <color name="endGameTheme">#5C5D8D</color>
+    <color name="secondEndGameTheme">#908FC3</color>
+    <color name="transparent_background">#00FFFFFF</color>
 
     <string name="jonquil">#F1C40F</string>
     <string name="lawnGreen">#7CFC00</string>
@@ -25,5 +27,9 @@
         <item>#DC0073</item>
         <item>#7CFC00</item>
         <item>#F679E5</item>
+        <item>#246EB9</item>
+        <item>#941B0C</item>
+        <item>#AF7A6D</item>
+        <item>#FF2ECC</item>
     </string-array>
 </resources>
