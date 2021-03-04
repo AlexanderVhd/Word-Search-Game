@@ -46,7 +46,7 @@ class GridAdapter extends BaseAdapter {
             final LayoutInflater layoutInflater = LayoutInflater.from(context);
             view = layoutInflater.inflate(R.layout.grid_item, null);
 
-            //set tags for selection as well as colors to be displayed when cell is unselected
+            //set tags (0: selected/unselected, 1: background color, 2: text color)
             view.setTag(R.string.active, false);
             view.setTag(R.string.background_color, "#00FFFFFF");
             view.setTag(R.string.text_color, "#757575");

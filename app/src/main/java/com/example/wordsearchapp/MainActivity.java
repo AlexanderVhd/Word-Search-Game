@@ -24,6 +24,11 @@ import com.example.wordsearchapp.Models.GameWord;
 import com.example.wordsearchapp.Models.Grid;
 import com.example.wordsearchapp.Models.Level;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements CallBackListener{
@@ -42,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
     //declare required global variables for game (game grid, game words, word selection colors, grid cell selection, and timer)
     Grid currGrid;
     GameWord gameWords[];
+    Level level;
     GridAdapter gridAdapter;
     WordAdapter wordAdapter;
     String currentColor = null, currentTextColor = null;
@@ -53,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
     boolean paused = false;
 
     //declare used words and colors
-    final String [] usedWords = {"ZEUS", "HERA", "POSEIDEN", "HADES", "APOLLO", "ARES", "HELIOS", "ATHENA", "ARTEMIS", "DEMETER"};
+    String [] usedWords = { "ZEUS", "HERA", "POSEIDEN", "HADES", "APOLLO", "ARES", "HELIOS", "ATHENA", "ARTEMIS", "DEMETER" };
     String[] colors;
 
     @Override
@@ -65,11 +71,11 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
         setupWidgets();
         numCol = getIntent().getIntExtra("gridCols", 8);
         numRow = getIntent().getIntExtra("gridRows", 10);
-        final Level level = (Level) getIntent().getSerializableExtra("level");
+        level = (Level) getIntent().getSerializableExtra("level");
         colors = this.getResources().getStringArray(R.array.word_colors);
 
         //initiate word search game
-        setupGame(numCol, numRow);
+        setupGame();
 
         homeIcon.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -146,7 +152,7 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
                         TextView prevTextView = prevSelection.findViewById(R.id.text_letter);
 
                         //check if user has found any of the words with their selection
-                        for(GameWord word : currGrid.getGameWords()){
+                        for(GameWord word : gameWords){
                             if((firstSelection == word.getStartCell() && position == word.getEndCell()) || (firstSelection == word.getEndCell() && position == word.getStartCell())){
                                 foundWord = word;
                                 break;
@@ -211,29 +217,62 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
         homeIcon = findViewById(R.id.home_icon);
     }
 
-    public void setupGame(int numCol, int numRow){
+    public void setupGame(){
 
-        //setup grid objects
-        currGrid = new Grid(numCol, numRow, usedWords);
+        //get density of screen for conversion of dp to px
+        final float scale = getApplicationContext().getResources().getDisplayMetrics().density;
 
-        //rearrange color array for game words, and set the first color for cell selection
+        //set the game variables (grid and game words) and grid cell selection colors
+        setGameVariables();
         shuffleColors(colors);
         updateSelectionColor(colors);
 
-        //setup data and layout of the word search grid
-        setupGrid(currGrid);
+        //setup the grid data (check if word population of grid was successful)
+        while(!currGrid.populateGrid(gameWords)){
+            setGameVariables();
+        }
+
+        //fill rest of the grid
+        currGrid.fillGrid();
+
+        //setup layout of grid depending on the grid size selected
+        if(currGrid.getNumCol() == 8){
+            gridView.setNumColumns(currGrid.getNumCol());
+            gridView.setColumnWidth((int) (35 * scale + 0.5f));
+        }
+        else if(currGrid.getNumCol() == 12){
+            gridView.setNumColumns(currGrid.getNumCol());
+            gridView.setColumnWidth((int) (23 * scale + 0.5f));
+        }
+        else{
+            gridView.setNumColumns(currGrid.getNumCol());
+        }
 
         //set grid adapter to display the grid
         gridAdapter = new GridAdapter(this, currGrid);
         gridView.setAdapter(gridAdapter);
 
         //set words list grid adapter to display the used words
-        wordAdapter = new WordAdapter(this, currGrid.getGameWords());
+        wordAdapter = new WordAdapter(this, gameWords);
         wordsListView.setAdapter(wordAdapter);
 
         //set UI elements
         numWords.setText("0/" + usedWords.length);
         startTimer();
+    }
+
+    public void setGameVariables(){
+
+        //setup grid object
+        currGrid = new Grid(numCol, numRow);
+
+        //setup game words used for word search
+        gameWords = new GameWord[usedWords.length];
+
+        //initialize game words
+        for(int i = 0; i < usedWords.length; i++){
+            gameWords[i] = new GameWord(usedWords[i].length(), usedWords[i]);
+        }
     }
 
     public void resetGame(){
@@ -248,7 +287,7 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
         timerRunning = false;
         timerOffset = 0;
 
-        setupGame(numCol, numRow);
+        setupGame();
     }
 
     public void shuffleColors(String[] colors) {
@@ -284,28 +323,6 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
         }
     }
 
-    public void setupGrid(Grid currGrid){
-
-        //get density of screen for conversion of dp to px
-        final float scale = getApplicationContext().getResources().getDisplayMetrics().density;
-
-        //setup the grid data
-        currGrid.populateGrid();
-        currGrid.fillGrid();
-
-        //setup layout of grid depending on the grid size selected
-        if(currGrid.getNumCol() == 8){
-            gridView.setNumColumns(currGrid.getNumCol());
-            gridView.setColumnWidth((int) (35 * scale + 0.5f));
-        }
-        else if(currGrid.getNumCol() == 12){
-            gridView.setNumColumns(currGrid.getNumCol());
-            gridView.setColumnWidth((int) (23 * scale + 0.5f));
-        }
-        else{
-            gridView.setNumColumns(currGrid.getNumCol());
-        }
-    }
 
     /*
      * Grid selection functionality and gameplay methods

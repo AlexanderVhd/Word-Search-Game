@@ -12,7 +12,6 @@ public class Grid {
     private int numCol;
     private int numRow;
     private char[] gridData;
-    private GameWord[] gameWords;
 
     enum Direction{
         Top,
@@ -28,17 +27,11 @@ public class Grid {
     Direction[] directions = Direction.values();
     Random random = new Random();
 
-    public Grid(int numCol, int numRow, String[] usedWords){
+    public Grid(int numCol, int numRow){
         this.numCol = numCol;
         this.numRow = numRow;
         this.gridSize = numCol * numRow;
         this.gridData = new char[numCol * numRow];
-
-        gameWords = new GameWord[usedWords.length];
-
-        for(int i = 0; i < usedWords.length; i++){
-            gameWords[i] = new GameWord(usedWords[i].length(), usedWords[i]);
-        }
     }
 
     /*
@@ -60,62 +53,69 @@ public class Grid {
         this.gridData[pos] = letter;
     }
 
-    public GameWord[] getGameWords() {
-        return gameWords;
-    }
 
     /*
      * Grid layout and grid data setup methods
      */
-    public void populateGrid(){
-        //iterate through every word in the used words list and use them to populate the grid
-        for(int i = 0; i < gameWords.length; i++){
+    public boolean populateGrid(GameWord [] gameWords){
 
-            Direction wordDirection = chooseDirection(directions);
+        Direction wordDirection;
+
+        //iterate through every word in the used words list and use them to populate the grid
+        for(GameWord gameWord : gameWords){
+
+            wordDirection = chooseDirection(directions);
 
             switch (wordDirection){
                 case Top:
-                    populateWord(Direction.Top, i);
+                    populateWord(Direction.Top, gameWord);
                     break;
 
                 case Left:
-                    populateWord(Direction.Left, i);
+                    populateWord(Direction.Left, gameWord);
                     break;
 
                 case Right:
-                    populateWord(Direction.Right, i);
+                    populateWord(Direction.Right, gameWord);
                     break;
 
                 case Down:
-                    populateWord(Direction.Down, i);
+                    populateWord(Direction.Down, gameWord);
                     break;
 
                 case TopLeft:
-                    populateWord(Direction.TopLeft, i);
+                    populateWord(Direction.TopLeft, gameWord);
                     break;
 
                 case TopRight:
-                    populateWord(Direction.TopRight, i);
+                    populateWord(Direction.TopRight, gameWord);
                     break;
 
                 case DownLeft:
-                    populateWord(Direction.DownLeft, i);
+                    populateWord(Direction.DownLeft, gameWord);
                     break;
 
                 case DownRight:
-                    populateWord(Direction.DownRight, i);
+                    populateWord(Direction.DownRight, gameWord);
                     break;
 
             }
+
+            //check if word was successfully positioned on grid
+            if(!gameWord.isPositioned()){
+                return false;
+            }
         }
+
+        return true;
     }
 
-    public void populateWord(Direction dir, int gameWordIndex){
+    public void populateWord(Direction dir, GameWord gameWord){
 
         ArrayList<Integer> cellArray = new ArrayList<Integer>();
         ArrayList<Integer> directionsList = new ArrayList<Integer>();
-        int wordLength = gameWords[gameWordIndex].getGameWord().length();
-        char[] word = gameWords[gameWordIndex].getGameWord().toCharArray();
+        int wordLength = gameWord.getGameWord().length();
+        char[] word = gameWord.getGameWord().toCharArray();
         int[] positions = new int[wordLength];
 
         //place oridinals of all directions into array in order
@@ -131,9 +131,15 @@ public class Grid {
         //keep searching for available cell positions in a certain direction until at least one position is found
         while(cellArray.size() <= 0){
             directionsList.remove(index);
-            index = random.nextInt(directionsList.size());
-            dirOrdinal = directionsList.get(index);
-            cellArray = findFreePositions(directions[dirOrdinal], cellArray, word);
+
+            if(directionsList.size() <= 0){
+                return;
+            }
+            else{
+                index = random.nextInt(directionsList.size());
+                dirOrdinal = directionsList.get(index);
+                cellArray = findFreePositions(directions[dirOrdinal], cellArray, word);
+            }
         }
 
         //choose random cell position from cellArray
@@ -142,15 +148,16 @@ public class Grid {
         //iterate through letters in the current word
         for(int l = 0; l < wordLength; l++){
 
-            //input letter in the grid and save the current grid cell position of the letter
+            //input letter in the grid and save the current grid cell position of the letter for the gameWord data
             addGridData(pos, word[l]);
             positions[l] = pos;
 
             pos = findNextCell(directions[dirOrdinal], pos);
         }
 
-        //save the grid cell positions of the word
-        gameWords[gameWordIndex].setPositionList(positions);
+        //save the grid cell positions of the word and mark word as positioned
+        gameWord.setPositionList(positions);
+        gameWord.setPositioned(true);
     }
 
     public ArrayList<Integer> findFreePositions(Direction dir, ArrayList<Integer> cellArray, char [] word){
@@ -192,7 +199,7 @@ public class Grid {
                 return currentCell+1 > numCol * (wordLength-1);
 
             case Left:
-                return (currentCell+1) % numCol >= wordLength || (currentCell+1) % numCol == 0;
+                return (currentCell+1) % numCol >= wordLength || ((currentCell+1) % numCol == 0 && wordLength <= numCol);
 
             case Right:
                 return (currentCell+1) % numCol <= numCol - (wordLength-1) && (currentCell+1) % numCol != 0;
@@ -201,13 +208,13 @@ public class Grid {
                 return currentCell+1 <= gridSize - (numCol * (wordLength - 1));
 
             case TopLeft:
-                return (currentCell+1 > numCol * (wordLength-1)) && ((currentCell+1) % numCol >= wordLength || (currentCell+1) % numCol == 0);
+                return (currentCell+1 > numCol * (wordLength-1)) && ((currentCell+1) % numCol >= wordLength || ((currentCell+1) % numCol == 0 && wordLength <= numCol));
 
             case TopRight:
                 return (currentCell+1 > numCol * (wordLength-1)) && ((currentCell+1) % numCol <= numCol - (wordLength-1) && (currentCell+1) % numCol != 0);
 
             case DownLeft:
-                return (currentCell+1 <= gridSize - (numCol * (wordLength - 1))) && ((currentCell+1) % numCol >= wordLength || (currentCell+1) % numCol == 0);
+                return (currentCell+1 <= gridSize - (numCol * (wordLength - 1))) && ((currentCell+1) % numCol >= wordLength || ((currentCell+1) % numCol == 0 && wordLength <= numCol));
 
             case DownRight:
                 return (currentCell+1 <= gridSize - (numCol * (wordLength - 1))) && ((currentCell+1) % numCol <= numCol - (wordLength-1) && (currentCell+1) % numCol != 0);
