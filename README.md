@@ -6,7 +6,7 @@ Technologies used: Android Studio (Android SDK)
 
 ## App Screenshots
 
-| Start Menu | Game | Game Paused | 
+| Start Menu | Game | End Game | 
 | :---: |:---:| :---:|
-| <img src="https://user-images.githubusercontent.com/34779092/105389401-cc68f100-5be5-11eb-8c55-b519c4952714.jpg" width="300" height="500"> | <img src="https://user-images.githubusercontent.com/34779092/105389447-dbe83a00-5be5-11eb-946b-60e323ad1edf.jpg" width="300" height="500"> | <img src="https://user-images.githubusercontent.com/34779092/105389499-e99dbf80-5be5-11eb-8a35-74eaf667e10e.jpg" width="300" height="500"> |
+| <img src="https://user-images.githubusercontent.com/34779092/105389401-cc68f100-5be5-11eb-8c55-b519c4952714.jpg" width="300" height="500"> | <img src="https://user-images.githubusercontent.com/34779092/108215628-88dba700-70ff-11eb-8f35-2b3681cb98a7.png" width="300" height="500"> | <img src="https://user-images.githubusercontent.com/34779092/108215688-98f38680-70ff-11eb-8e97-e2b4b7d47c45.png" width="300" height="500"> |
 
