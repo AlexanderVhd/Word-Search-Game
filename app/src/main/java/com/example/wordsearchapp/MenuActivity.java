@@ -10,20 +10,34 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.wordsearchapp.Models.GameSetup;
+import com.example.wordsearchapp.Models.GridSize;
 import com.example.wordsearchapp.Models.Level;
 
+import java.util.Random;
 
-public class MenuActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
+
+public class MenuActivity extends AppCompatActivity{
 
     Button startBtn;
     Spinner spinner;
+    ImageButton leftArrowGridSizeBtn;
+    ImageButton rightArrowGridSizeBtn;
+    ImageButton leftArrowLevelBtn;
+    ImageButton rightArrowLevelBtn;
+    TextView gridSizeTxt;
+    TextView levelTxt;
 
-    int gridCols = 8;
-    int gridRows = 10;
-    Level level = Level.EASY;
+    int levelIndex = 0, gridSizeIndex = 0;
+    Level level = Level.Easy;
+    GridSize gridSize = GridSize.Small;
+    String theme;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,59 +47,110 @@ public class MenuActivity extends AppCompatActivity implements AdapterView.OnIte
         //setup UI elements
         setupWidgets();
 
+        final Level [] levelList = Level.values();
+        final GridSize [] gridSizeList = GridSize.values();
+        final String [] themeList = getResources().getStringArray(R.array.theme_options);
+
         startBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MenuActivity.this, MainActivity.class);
-                intent.putExtra("gridCols", gridCols);
-                intent.putExtra("gridRows", gridRows);
+                intent.putExtra("gridSize", gridSize);
                 intent.putExtra("level", level);
+                intent.putExtra("theme", theme);
                 startActivity(intent);
             }
         });
 
-        //setup data and theme of adapter for the dropdown menu that will display the grid options
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(MenuActivity.this,
-                android.R.layout.simple_list_item_1, getResources().getStringArray(R.array.grid_options));
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        leftArrowGridSizeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                //iterate through the string array for the grid size and set the proper size
+                gridSizeIndex = gridSizeIndex == 0 ? gridSizeList.length-1 : gridSizeIndex - 1;
+                gridSize = gridSizeList[gridSizeIndex];
+
+                gridSizeTxt.setText(gridSize.getNumCol() + "x" + gridSize.getNumRow() + " Grid");
+            }
+        });
+
+        rightArrowGridSizeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                //iterate through the string array for the grid size and set the proper size
+                gridSizeIndex = gridSizeIndex == gridSizeList.length-1 ? 0 : gridSizeIndex + 1;
+                gridSize = gridSizeList[gridSizeIndex];
+
+                gridSizeTxt.setText(gridSize.getNumCol() + "x" + gridSize.getNumRow() + " Grid");
+            }
+        });
+
+        leftArrowLevelBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                //iterate through the string array for the levels and set the proper level
+                levelIndex = levelIndex == 0 ? levelList.length-1 : levelIndex - 1;
+                level = levelList[levelIndex];
+
+                levelTxt.setText(level.toString());
+            }
+        });
+
+        rightArrowLevelBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                //iterate through the string array for the levels and set the proper level
+                levelIndex = levelIndex == levelList.length-1 ? 0 : levelIndex + 1;
+                level = levelList[levelIndex];
+
+                levelTxt.setText(level.toString());
+            }
+        });
+
+        //setup array adapter for the theme option selection with the layout resource files for the spinner and spinner list UI
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.theme_options, themeList);
+        adapter.setDropDownViewResource(R.layout.theme_options_dropdown);
         spinner.setAdapter(adapter);
 
-        spinner.setOnItemSelectedListener(this);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                Random rand = new Random();
 
+                //check if random theme is selected
+                if(position == 0){
+                    int randomIndex = rand.nextInt(themeList.length - 1 + 1) + 1;
+                    theme = themeList[randomIndex];
+                }
+                else{
+                    theme = themeList[position];
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+        //set initial content on UI carousel menus
+        levelTxt.setText(levelList[levelIndex].toString());
+        gridSizeTxt.setText(gridSize.getNumCol() + "x" + gridSize.getNumRow() + " Grid");
     }
 
     public void setupWidgets(){
         startBtn = findViewById(R.id.start_btn);
-        spinner =  findViewById(R.id.grid_size_option);
+        spinner =  findViewById(R.id.theme_option_selection);
+        leftArrowGridSizeBtn = findViewById(R.id.left_arrow_grid_size);
+        rightArrowGridSizeBtn = findViewById(R.id.right_arrow_grid_size);
+        gridSizeTxt = findViewById(R.id.grid_size_txt);
+        leftArrowLevelBtn = findViewById(R.id.left_arrow_level);
+        rightArrowLevelBtn = findViewById(R.id.right_arrow_level);
+        levelTxt = findViewById(R.id.level_txt);
     }
 
-    @Override
-    public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
 
-        //get array of dropdown menu options and the selected dropdown menu item
-        String [] optionsList = getResources().getStringArray(R.array.grid_options);
-        String option = adapterView.getItemAtPosition(i).toString();
-
-        //set grid size based on dropdown menu item selected
-        if(option.equals(optionsList[0])){
-            gridCols = 8;
-            gridRows = 10;
-            level = Level.EASY;
-        }
-        else if(option.equals(optionsList[1])){
-            gridCols = 10;
-            gridRows = 12;
-            level = Level.MEDIUM;
-        }
-        else if(option.equals(optionsList[2])){
-            gridCols = 12;
-            gridRows = 14;
-            level = Level.HARD;
-        }
-    }
-
-    @Override
-    public void onNothingSelected(AdapterView<?> adapterView) {
-
-    }
 }

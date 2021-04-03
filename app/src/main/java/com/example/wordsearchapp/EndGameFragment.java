@@ -65,7 +65,7 @@ public class EndGameFragment extends DialogFragment {
         double hardMillisecond = 660000;  // 11 minute window to get points for hard mode
 
         //calculate level points and time points
-        if(level.equals(Level.EASY)){
+        if(level.equals(Level.Easy)){
 
             levelPoints = 40;  //calculate level points (40 points for easy mode)
 
@@ -73,7 +73,7 @@ public class EndGameFragment extends DialogFragment {
             //if time taken is more than 90% of 5 minutes then 10 points is earned (last 10% of 5 minutes goes under 10 points)
             timePoints = timeValue < (0.9 * easyMillisecond) ? ((easyMillisecond - timeValue) / easyMillisecond) * 100 : 10;
         }
-        else if(level.equals(Level.MEDIUM)){
+        else if(level.equals(Level.Medium)){
 
             levelPoints = 70;  //calculate level points (40 points for easy mode)
 

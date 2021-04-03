@@ -10,46 +10,206 @@
         android:id="@+id/menu_background"
         android:layout_height="match_parent"
         android:layout_width="match_parent"
-        android:alpha="0.2"
-        android:src="@drawable/menu_background"
+        android:alpha="0.1"
+        android:src="@drawable/menu_img_background"
         android:scaleType="centerCrop" />
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/highscore_display"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="5dp"
+        app:cardBackgroundColor="@color/secondaryTheme"
+        app:cardCornerRadius="12dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="8dp"
+            android:layout_marginVertical="5dp">
+
+            <ImageView
+                android:id="@+id/highscore_symbol"
+                android:layout_height="22dp"
+                android:layout_width="22dp"
+                android:src="@drawable/highscore_icon"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"/>
+
+            <TextView
+                android:id="@+id/score_display"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_marginLeft="7dp"
+                android:text="1000"
+                android:textColor="@android:color/white"
+                android:textSize="16dp"
+                app:layout_constraintStart_toEndOf="@+id/highscore_symbol"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
 
     <RelativeLayout
         android:id="@+id/menu_title"
-        android:layout_height="150dp"
-        android:layout_width="330dp"
-        android:layout_marginTop="120dp"
-        android:background="@drawable/menu_image"
+        android:layout_height="140dp"
+        android:layout_width="320dp"
+        android:layout_marginTop="80dp"
+        android:background="@drawable/menu_title_image"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
     </RelativeLayout>
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/game_options"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_marginTop="30dp"
+        android:paddingVertical="10dp"
+        android:paddingHorizontal="40dp"
+        app:layout_constraintTop_toBottomOf="@+id/menu_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/select_grid_size_txt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="serif"
+            android:textSize="17dp"
+            android:textStyle="bold"
+            android:text="Game Options"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+
+        <LinearLayout
+            android:id="@+id/grid_size_selection"
+            android:layout_height="27dp"
+            android:layout_width="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/select_grid_size_txt">
+
+            <ImageButton
+                android:id="@+id/left_arrow_grid_size"
+                android:layout_width="35dp"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:background="@color/transparent_background"
+                android:src="@drawable/left_arrow_selection"/>
+
+            <TextView
+                android:id="@+id/grid_size_txt"
+                android:layout_width="110dp"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textAlignment="center"
+                android:text="8x10"
+                android:background="@drawable/game_option_border"
+                android:textColor="@color/thirdTheme"
+                android:textStyle="bold"
+                android:textSize="17dp" />
+
+            <ImageButton
+                android:id="@+id/right_arrow_grid_size"
+                android:layout_width="35dp"
+                android:layout_height="match_parent"
+                android:background="@color/transparent_background"
+                android:scaleType="fitCenter"
+                android:src="@drawable/right_arrow_selection"/>
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/level_selection"
+            android:layout_height="27dp"
+            android:layout_width="wrap_content"
+            android:layout_marginTop="7dp"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/grid_size_selection">
+
+            <ImageButton
+                android:id="@+id/left_arrow_level"
+                android:layout_width="35dp"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:background="@color/transparent_background"
+                android:src="@drawable/left_arrow_selection"/>
+
+            <TextView
+                android:id="@+id/level_txt"
+                android:layout_width="110dp"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textAlignment="center"
+                android:background="@drawable/game_option_border"
+                android:text="Easy"
+                android:textColor="@color/thirdTheme"
+                android:textStyle="bold"
+                android:textSize="17dp" />
+
+            <ImageButton
+                android:id="@+id/right_arrow_level"
+                android:layout_width="35dp"
+                android:layout_height="match_parent"
+                android:background="@color/transparent_background"
+                android:scaleType="fitCenter"
+                android:src="@drawable/right_arrow_selection"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/select_theme_txt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:fontFamily="serif"
+            android:textSize="17dp"
+            android:textStyle="bold"
+            android:text="Theme"
+            app:layout_constraintTop_toBottomOf="@id/level_selection"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <Spinner
+            android:id="@+id/theme_option_selection"
+            android:layout_width="170dp"
+            android:layout_height="wrap_content"
+            android:background="@color/thirdTheme"
+            android:spinnerMode="dialog"
+            android:entries="@array/theme_options"
+            android:layout_marginTop="6dp"
+            app:layout_constraintTop_toBottomOf="@+id/select_theme_txt"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
     <Button
         android:id="@+id/start_btn"
         android:layout_height="wrap_content"
         android:layout_width="170dp"
-        android:text="Start Game"
+        android:text="Play"
         android:textSize="15dp"
         android:textColor="@color/textPrimary"
         android:background="@color/primaryTheme"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="50dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/menu_title"/>
-
-    <Spinner
-        android:id="@+id/grid_size_option"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:spinnerMode="dropdown"
-        android:layout_marginTop="15dp"
-        app:layout_constraintTop_toBottomOf="@+id/start_btn"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        />
-
+        app:layout_constraintTop_toBottomOf="@+id/game_options"/>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

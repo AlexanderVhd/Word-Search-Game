@@ -6,9 +6,15 @@
     <string name="background_color">1</string>
     <string name="text_color">2</string>
 
-    <string-array name="grid_options">
-        <item>8x10</item>
-        <item>10x12</item>
-        <item>12x14</item>
+    <string-array name="theme_options">
+        <item>Random</item>
+        <item>Programming</item>
+        <item>Sixties</item>
+        <item>AOT</item>
+        <item>GOT</item>
+        <item>Greek</item>
+        <item>Norse</item>
+        <item>Space</item>
     </string-array>
+
 </resources>

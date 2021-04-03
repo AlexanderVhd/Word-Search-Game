@@ -20,16 +20,22 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.example.wordsearchapp.Models.GameSetup;
 import com.example.wordsearchapp.Models.GameWord;
 import com.example.wordsearchapp.Models.Grid;
+import com.example.wordsearchapp.Models.GridSize;
 import com.example.wordsearchapp.Models.Level;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity implements CallBackListener{
 
@@ -45,13 +51,12 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
     final int UNSELECTED = -1;
 
     //declare required global variables for game (game grid, game words, word selection colors, grid cell selection, and timer)
+    GameSetup gameSetup;
     Grid currGrid;
     GameWord gameWords[];
-    Level level;
     GridAdapter gridAdapter;
     WordAdapter wordAdapter;
     String currentColor = null, currentTextColor = null;
-    int numCol, numRow;
     int firstSelection = UNSELECTED;
     int wordsFound = 0;
     boolean timerRunning = false;
@@ -59,20 +64,24 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
     boolean paused = false;
 
     //declare used words and colors
-    String [] usedWords = { "ZEUS", "HERA", "POSEIDEN", "HADES", "APOLLO", "ARES", "HELIOS", "ATHENA", "ARTEMIS", "DEMETER" };
-    String[] colors;
+    String [] usedWords;
+    String [] colors;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //setup UI widgets and get grid dimensions and level from menu activity
+        //setup UI widgets and get game data from menu activity
         setupWidgets();
-        numCol = getIntent().getIntExtra("gridCols", 8);
-        numRow = getIntent().getIntExtra("gridRows", 10);
-        level = (Level) getIntent().getSerializableExtra("level");
+        GridSize gridSize = (GridSize) getIntent().getSerializableExtra("gridSize");
+        Level level = (Level) getIntent().getSerializableExtra("level");
+        String theme = getIntent().getStringExtra("theme");
+
+        //setup game settings and word data that will be used for the current game
+        gameSetup = new GameSetup(gridSize, level, theme);
         colors = this.getResources().getStringArray(R.array.word_colors);
+        usedWords = fetchWordSet();
 
         //initiate word search game
         setupGame();
@@ -176,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
                                 Bundle bundle = new Bundle();
                                 bundle.putInt("timeValue", (int) timerOffset);
                                 bundle.putInt("wordsFound", wordsFound);
-                                bundle.putSerializable("level", level);
+                                bundle.putSerializable("level", gameSetup.getLevel());
 
                                 //setup endgame fragment with data bundle
                                 EndGameFragment endGameFragment = new EndGameFragment();
@@ -219,15 +228,18 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
 
     public void setupGame(){
 
+
         //get density of screen for conversion of dp to px
         final float scale = getApplicationContext().getResources().getDisplayMetrics().density;
 
-        //set the game variables (grid and game words) and grid cell selection colors
-        setGameVariables();
+        //set grid cell selection colors
         shuffleColors(colors);
         updateSelectionColor(colors);
 
-        //setup the grid data (check if word population of grid was successful)
+        //set game variables (grid, game words)
+        setGameVariables();
+
+        //setup the grid data (check if word population of grid was successful, if not, then repeat)
         while(!currGrid.populateGrid(gameWords)){
             setGameVariables();
         }
@@ -261,10 +273,47 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
         startTimer();
     }
 
+    public String[] fetchWordSet(){
+
+        Random random = new Random();
+        Set<String> wordSet = new HashSet<String>();
+
+        try{
+            //read entire json file containing the word sets into memory
+            InputStream inputStream = this.getResources().openRawResource(R.raw.wordsetsjson);
+            byte [] buffer = new byte[inputStream.available()];
+            while (inputStream.read(buffer) != -1);
+
+            //convert buffer content into string and parse string into json array
+            String jsonText = new String(buffer);
+            JSONObject entries = new JSONObject(jsonText);
+
+            //filter entries based on theme and determine random amount of words for game
+            JSONArray themeWords = entries.getJSONArray(gameSetup.getTheme());
+            int numWords = random.nextInt(gameSetup.getMaxNumWords() - gameSetup.getMinNumWords() + 1) + gameSetup.getMinNumWords();
+
+            //fill the set with random words from the theme words json array
+            while(wordSet.size() <= numWords){
+                int index = random.nextInt(themeWords.length());
+                String word = themeWords.getString(index);
+
+                if(!wordSet.contains(word) && word.length() <= gameSetup.getMaxWordLength()){
+                    wordSet.add(word);
+                }
+            }
+        }
+        catch (Exception ex){
+            Log.i("Error", ex.getMessage());
+        }
+
+        //return the string array copy of the word set
+        return Arrays.copyOf(wordSet.toArray(), wordSet.size(), String[].class);
+    }
+
     public void setGameVariables(){
 
         //setup grid object
-        currGrid = new Grid(numCol, numRow);
+        currGrid = new Grid(gameSetup.getGridSize().getNumCol(), gameSetup.getGridSize().getNumRow());
 
         //setup game words used for word search
         gameWords = new GameWord[usedWords.length];

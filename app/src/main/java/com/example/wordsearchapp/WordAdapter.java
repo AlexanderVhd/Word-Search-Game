@@ -1,6 +1,7 @@
 package com.example.wordsearchapp;
 
 import android.content.Context;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,6 +49,15 @@ class WordAdapter extends BaseAdapter {
         }
 
         TextView textView =  view.findViewById(R.id.text_word);
+
+        //make word font size smaller if the word is too large for the container
+        if(word.length() > 10){
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        }
+        else if(word.length() > 8){
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        }
+
         textView.setText(word);
 
         return view;
