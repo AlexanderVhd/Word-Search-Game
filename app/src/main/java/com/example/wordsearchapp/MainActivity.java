@@ -138,7 +138,7 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
 
                         //remove highlight on gridcell to indicate it is no longer selected
                         firstSelection = UNSELECTED;
-                        selectCell(view, false);
+                        selectCell((CardView)view, false);
                     }
                 }
                 else{
@@ -146,14 +146,14 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
 
                         //highlight gridcell to indicate it is selected
                         firstSelection = position;
-                        selectCell(view, true);
+                        selectCell( (CardView) view, true);
                     }
                     else{
 
                         GameWord foundWord = null;
 
                         //highlight gridcell to indicate it is selected
-                        selectCell(view, true);
+                        selectCell((CardView)view, true);
 
                         //get view of current selection as well as view and textview of previous selection
                         TextView currTextView = view.findViewById(R.id.text_letter);
@@ -199,10 +199,10 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
                             updateSelectionColor(colors);
                         }
                         else{
-                            animateCell(view, "backgroundColor", Color.parseColor(currentColor), Color.parseColor((String) view.getTag(R.string.background_color)));
+                            animateCell(view, "cardBackgroundColor", Color.parseColor(currentColor), Color.parseColor((String) view.getTag(R.string.background_color)));
                             animateCell(currTextView, "textColor", Color.parseColor(currentTextColor), Color.parseColor((String) view.getTag(R.string.text_color)));
 
-                            animateCell(prevSelection, "backgroundColor", Color.parseColor(currentColor), Color.parseColor((String) prevSelection.getTag(R.string.background_color)));
+                            animateCell(prevSelection, "cardBackgroundColor", Color.parseColor(currentColor), Color.parseColor((String) prevSelection.getTag(R.string.background_color)));
                             animateCell(prevTextView, "textColor", Color.parseColor(currentTextColor), Color.parseColor((String) prevSelection.getTag(R.string.text_color)));
                         }
 
@@ -376,18 +376,18 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
     /*
      * Grid selection functionality and gameplay methods
      */
-    public void selectCell(View view, boolean active){
+    public void selectCell(CardView view, boolean active){
 
         if(active){
-            view.setTag(R.string.active, active);
-            view.setBackgroundColor(Color.parseColor(currentColor));
+            view.setTag(R.string.active, true);
+            view.setCardBackgroundColor(Color.parseColor(currentColor));
 
             TextView textView = view.findViewById(R.id.text_letter);
             textView.setTextColor(Color.parseColor(currentTextColor));
         }
         else{
-            view.setTag(R.string.active, active);
-            view.setBackgroundColor(Color.parseColor((String) view.getTag(R.string.background_color)));
+            view.setTag(R.string.active, false);
+            view.setCardBackgroundColor(Color.parseColor((String) view.getTag(R.string.background_color)));
 
             TextView textView = view.findViewById(R.id.text_letter);
             textView.setTextColor(Color.parseColor((String) view.getTag(R.string.text_color)));
@@ -422,9 +422,10 @@ public class MainActivity extends AppCompatActivity implements CallBackListener{
         //animate all grid cell positions that are in the word
         for(int i = 0; i < foundWord.getWordSize(); i++){
             ViewGroup gridCell = (ViewGroup) gridView.getChildAt(foundWord.getCellPosition(i));
+            CardView cellContainer = gridCell.findViewById(R.id.grid_cell_container);
             TextView cellLetter = gridCell.findViewById(R.id.text_letter);
 
-            animateCell(gridCell, "backgroundColor", Color.parseColor((String) gridCell.getTag(R.string.background_color)), Color.parseColor(currentColor));
+            animateCell(cellContainer, "cardBackgroundColor", Color.parseColor((String) gridCell.getTag(R.string.background_color)), Color.parseColor(currentColor));
             animateCell(cellLetter, "textColor", Color.parseColor((String) gridCell.getTag(R.string.text_color)), Color.parseColor(currentTextColor));
 
             gridCell.setTag(R.string.background_color, currentColor);
