@@ -1,8 +1,7 @@
 # Word-Search-Game
-This is a word search mobile app game for Android. The user must try to find all the hidden words in a grid in order to win. The user can also select the grid
-size they want in the start menu.
+A word search game built as an Android app. The user is able to customize their game with the grid options in the start menu to whatever they prefer with regards to grid size and game difficulty. Additionally, the user can also select the theme their word search game will be based upon (this impacts the words used in the game). Once the game is started, the user is redirected to the actual word search game and must try to find all the hidden words in the grid in order to win. The score is then calculated based upon the game difficulty, words found, and how fast the user found all the hidden words. 
 
-Technologies used: Android Studio (Android SDK) 
+Technologies used: Android Studio (Android SDK), Gradle, JSON
 
 ## App Screenshots
 
